@@ -1,33 +1,22 @@
 library(C50)
 library(readxl)
-a1026 <- read.csv("/Users/sharon/Documents/銘傳大學/專案研究/學生報到預測/data/app1026完整.csv")
+a1026 <- read.csv(“/Users/sharon/Documents/銘傳大學/專案研究/學生報到預測/data/app1026完整.csv”)
 
-name_1 <- unique(a1026$學院)
-#法律 社科 健康 教語 設計 傳播 資訊 管理 觀光
-
-#z<-subset(a1026,a1026$年度==105&a1026$學院=='法律', select =c(9:14,19))
-#x<-subset(a1026,a1026$年度==106&a1026$學院=='法律', select =c(9:14,19))
-
-#全校為單位
+#部門為單位
 z<-subset(a1026,a1026$年度==104, select =c(9:14,19))
 x<-subset(a1026,a1026$年度==105, select =c(9:14,19))
 
 #install.packages("tree")
-#length(grep('no',a$Results))
-a <- z[,-7]
-b <- x[,-7]
+a <- z[,-7] #刪除無法常態分佈的欄位
+b <- x[,-7] #刪除無法常態分佈的欄位
 
 #z分佈(常態分佈) ####
 mina1<-apply(a,2,min)
-mina1 #print(minb1)
 maxa1<-apply(a,2,max)
-maxa1 #print(maxb1)  
 a1 <- maxa1- mina1
 
 minb1<-apply(b,2,min)
-minb1 #print(minb1)
 maxb1<-apply(b,2,max)
-maxb1 #print(maxb1)  
 b2 <- maxb1-minb1
 
 a <- cbind(a,z$註冊)
@@ -42,22 +31,19 @@ a1$`z$註冊` <- as.factor(a1$`z$註冊`)
 b1$`x$註冊` <- as.factor(b1$`x$註冊`)
 a1 <- a1[1:7315,]
 
-wdbc.tree=tree(a1$`z$註冊`~.,data=a1
-               #,tree.control(nobs=6,mincut = 1,minsize = 2,mindev = 0.01)
-)
+wdbc.tree=tree(a1$`z$註冊`~.,data=a1)
 wdbc.tree
 summary(wdbc.tree)
 plot(wdbc.tree)
 par(family = "STKaiti")
 text(wdbc.tree)
 
-#train confusion matrix
-train.pred=predict(wdbc.tree,newdata=b1, type='class')
-(table.train=table(b1$`x$註冊`,train.pred))
-cat("Total records(train)=",(table.train[1,2]+table.train[1,3]),"\n")
-cat("Correct Classification Ratio(train)=", table.train[3,2]/(table.train[2,1]+table.train[3,2])*100,"%\n")
-all01 =data.frame(a1,Spec.Pred=train.pred) #可查看結果
-#all02 =data.frame(b1,Spec.Pred=test.pred) #可查看結果
+#test confusion matrix
+test.pred=predict(wdbc.tree,newdata=b1, type='class')
+(table.test=table(b1$`x$註冊`,test.pred))
+cat("Total records(test)=",(table.test[1,2]+table.test[1,3]),"\n")
+cat("Correct Classification Ratio(test)=", table.test[3,2]/(table.test[2,1]+table.test[3,2])*100,"%\n")
+all01 =data.frame(b1,Spec.Pred=test.pred) #可查看結果
 
 #準確度####
 tp <- length(which(all01$z.註冊=='未到'&all01$Spec.Pred=='未到'))#未＝未
@@ -70,6 +56,7 @@ precision <- (tn/(tn + fp))*100 #precision
 f1 <- ((2*recall*precision)/(recall+precision)) ##F1-measure綜合評價指標
 
 # 2.C50分類樹計算####
+library(C50)
 a1 <- a
 b1 <- b
 a1$`z$註冊` <- gsub('報到','Y',a1$`z$註冊`)
